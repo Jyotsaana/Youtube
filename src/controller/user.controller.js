@@ -1,7 +1,7 @@
-import {asyncHandler} from '/utility/asynchandeler.js';
-import {ApiError} from '/utility/apierror.js';
-import {user} from '/model/user.js';
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import asyncHandler from '../utility/asynchandeler.js';
+import ApiError from '../utility/apierror.js';
+import { User } from '../models/user.js';
+import { uploadOnCloudinary } from "../utility/cloudinary.js";
 
 export const registerUser =  asyncHandler(async (req, res) => {
    
@@ -16,7 +16,13 @@ export const registerUser =  asyncHandler(async (req, res) => {
     //return res
 
     const {username,email,fullName,password}=req.body;
-    console.log(req.body);
+//     console.log(req.body);
+    
+
+//      console.log(process.env.CLOUDINARY_CLOUD_NAME);
+// console.log(process.env.CLOUDINARY_API_KEY);
+// console.log(process.env.CLOUDINARY_API_SECRET); 
+
 
    if(
    [username,email,fullName,password].some(
@@ -26,8 +32,9 @@ export const registerUser =  asyncHandler(async (req, res) => {
    throw new ApiError(400,"All fields are required");
   }
 
+    
 
-    const existedUser = await user.findOne({
+    const existedUser = await User.findOne({
    $or:[{username},{email}]
    })
  
@@ -38,25 +45,33 @@ export const registerUser =  asyncHandler(async (req, res) => {
    }
 
   
-   const avatarLocalPath = req.files?.avatar[0]?.path;
-   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+   const avatarLocalPath = req.files?.avatar?.[0]?.path;
+   const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
+
+   if(!avatarLocalPath){
+       throw new ApiError(400,"avatar is required")
+   }
 
    
-   const avatar = await uploadOnCloudinary(
-   avatarLocalPath
-);
 
 
-   //avatar is required but cover image is optionnal
-    if(!avatarLocalPath){
-        throw new ApiError(400,"avatar is reqiured")
-    }
+
+ let coverImage;
+
+
+   // Uncomment this after setting up Cloudinary
+   const avatar = await uploadOnCloudinary(avatarLocalPath);
+   
+   if(coverImageLocalPath){
+      
+       coverImage = await uploadOnCloudinary(coverImageLocalPath);
+   }
 
 
 
 
    //create
-   const createdUser = await user.create({
+   const createdUser = await User.create({
    username,
    email,
    fullName,
@@ -67,7 +82,7 @@ export const registerUser =  asyncHandler(async (req, res) => {
 
     //Never send password to frontend.
 
-    const newUser = await user.findById(createdUser._id).select(
+    const newUser = await User.findById(createdUser._id).select(
    "-password -refreshToken"
      )
    

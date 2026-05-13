@@ -1,7 +1,7 @@
-require('dotenv').config({path:"./.env"}); //this is used to read env file earlier so no wait 
+import 'dotenv/config.js';
 import mongoose from "mongoose";
-import { DB_NAME } from "./constants";
-
+import { DB_NAME } from "./constants.js";
+import { app } from "./app.js";
 import connectDB from "./db/index.js";
 
 

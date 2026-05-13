@@ -5,7 +5,7 @@ import {
     // deleteUser
 } from "../controller/user.controller.js";
 
-import {upload} from "./middlewares/multer.js"
+import {upload} from "../middlewares/multer.js"
 
 const router = express.Router();
 
