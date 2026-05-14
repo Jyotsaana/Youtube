@@ -97,3 +97,13 @@ export const registerUser =  asyncHandler(async (req, res) => {
     })
 
 })
+
+const loginUser =asyncHandler(async(req,res)=>{
+      //req body->data
+      // username or email
+      // find the user 
+      // no user find req send back
+      // password check 
+      //access and refresh tokens
+
+})
