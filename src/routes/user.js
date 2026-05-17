@@ -1,9 +1,12 @@
 import express from "express";
 import {
     registerUser,
-    loginUser
-   
+    loginUser,
+    
+   logoutUser  
 } from "../controller/user.controller.js";
+
+import {verifyJWT} from "../middlewares/auth.js"
 
 import {upload} from "../middlewares/multer.js"
 

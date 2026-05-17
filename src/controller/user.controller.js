@@ -4,6 +4,7 @@ import ApiResponse from '../utility/apiresponse.js';
 
 import { User } from '../models/user.js';
 import { uploadOnCloudinary } from "../utility/cloudinary.js";
+// import {isPasswordCorrect} from "../models/user.js"
 
 
   const generateAccessAndRefreshTokens=async(userId)=>{
@@ -26,7 +27,7 @@ import { uploadOnCloudinary } from "../utility/cloudinary.js";
   }
 
 
-export const registerUser =  asyncHandler(async (req, res) => {
+ const registerUser =  asyncHandler(async (req, res) => {
    
      //get user details from frontend
      //validation -not empty
@@ -123,7 +124,7 @@ export const registerUser =  asyncHandler(async (req, res) => {
 
 
 
-export const loginUser =asyncHandler(async(req,res)=>{
+ const loginUser =asyncHandler(async(req,res)=>{
       //req body->data
       // username or email
       // find the user 
@@ -135,12 +136,12 @@ export const loginUser =asyncHandler(async(req,res)=>{
 
       const{email,username,password}=req.body;
 
-      if(!username || !email){
+      if(!username && !email){
         throw new ApiError(400,"email or username is required");
       }
 
 
-      const user=User.findOne({
+      const user=await User.findOne({
          $or:[{username,email}]
       })
 
@@ -161,7 +162,7 @@ export const loginUser =asyncHandler(async(req,res)=>{
      const {accesstoken,refreshtoken}=await generateAccessAndRefreshTokens(user._id)
     
 
-   const loggedInUser= await user.findById(user._id).select("-password -refreshToken")
+   const loggedInUser= await User.findById(user._id).select("-password -refreshToken")
 
 
    //cookies
@@ -191,7 +192,7 @@ export const loginUser =asyncHandler(async(req,res)=>{
 })
 
 
-export const logoutUser = asyncHandler(async (req, res) => {
+const logoutUser = asyncHandler(async (req, res) => {
 
     await User.findByIdAndUpdate(
         req.user._id,
@@ -218,4 +219,101 @@ export const logoutUser = asyncHandler(async (req, res) => {
         message: "User logged out"
     })
 })
+
+
+
+ const changeCurrentPassword = asyncHandler(async (req, res) => {
+
+    // get old and new password from body
+    const { oldPassword, newPassword } = req.body;
+
+    // check if fields are empty
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, "All fields are required");
+    }
+
+    // get logged in user
+    const user = await User.findById(req.user?._id);
+
+    // check old password is correct or not
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password");
+    }
+
+    // set new password
+    user.password = newPassword;
+
+    // save user
+    // validateBeforeSave false because only password changing
+    await user.save({ validateBeforeSave: false });
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Password changed successfully"
+            )
+        );
+});
+
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                req.user,
+                "Current user fetched successfully"
+            )
+        );
+});
+
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+
+    const { fullName, email } = req.body
+
+    if (!fullName || !email) {
+        throw new ApiError(400, "All fields are required")
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                fullName,
+                email
+            }
+        },
+        {
+            new: true
+        }
+    ).select("-password")
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                user,
+                "Account details updated successfully"
+            )
+        )
+})
+
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails
+}
 
